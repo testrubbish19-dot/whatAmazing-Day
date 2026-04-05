@@ -15,7 +15,31 @@
 
     <style>
         /* 保持原本的 CSS，增加一點視覺回饋 */
-        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; -webkit-user-select: none; }
+       body {
+    font-family: -apple-system, system-ui, sans-serif;
+    /* 這裡加入你的公仔背景圖 */
+    background-image: url('background.jpg'); 
+    background-size: cover;      /* 讓圖片填滿整個螢幕 */
+    background-position: center; /* 圖片置中 */
+    background-attachment: fixed; /* 滾動時背景固定不動 */
+    background-repeat: no-repeat;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: 0;
+    -webkit-user-select: none;
+}
+
+/* 為了讓文字在背景上更清楚，我們幫標題加一個半透明底色 */
+h2 {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 5px 15px;
+    border-radius: 10px;
+    color: #333;
+    margin-top: 10px;
+}
         .mode-selector { display: flex; gap: 8px; margin: 20px 0; width: 100%; max-width: 500px; }
         .mode-selector button { flex: 1; padding: 12px; border-radius: 12px; border: none; background: #ddd; cursor: pointer; transition: 0.2s; }
         .mode-selector button.active { background: #ff4757; color: white; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
