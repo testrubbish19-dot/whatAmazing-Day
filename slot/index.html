@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>生活隨機老虎機</title>
+    <!-- PWA 設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#333333">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22生活老虎機%22,%22short_name%22:%22老虎機%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#f0f2f5%22}">
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; -webkit-user-select: none; }
+        .header { margin-top: 20px; margin-bottom: 15px; text-align: center; }
+        .mode-selector { display: flex; gap: 8px; margin-bottom: 20px; width: 100%; max-width: 500px; }
+        .mode-selector button { flex: 1; padding: 12px 5px; font-size: 14px; cursor: pointer; border: none; border-radius: 12px; background: #ddd; color: #555; transition: 0.2s; }
+        .mode-selector button.active { background: #ff4757; color: white; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
+        
+        .slot-machine {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background: #222;
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            max-width: 500px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .slot-box {
+            background: linear-gradient(180deg, #fff 0%, #f9f9f9 100%);
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+            text-align: center;
+            padding: 5px;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        .slot-label { font-size: 10px; color: #999; margin-bottom: 4px; font-weight: bold; }
+        .slot-content { font-weight: 800; color: #333; font-size: 13px; line-height: 1.2; overflow-wrap: break-word; }
+        
+        #spin-btn {
+            margin-top: 40px;
+            width: 80%;
+            max-width: 300px;
+            padding: 18px;
+            font-size: 22px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            cursor: pointer;
+        }
+        #spin-btn:disabled { background: #ccc; box-shadow: none; }
+        .rolling { opacity: 0.6; filter: blur(1px); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2 style="margin:0; color:#333;">🎰 生活隨機老虎機</h2>
+</div>
+
+<div class="mode-selector">
+    <button onclick="setMode('one')" id="btn-one" class="active">一人</button>
+    <button onclick="setMode('two')" id="btn-two">二人</button>
+    <button onclick="setMode('many')" id="btn-many">三人+</button>
+</div>
+
+<div class="slot-machine" id="machine">
+    <div class="slot-box"><div class="slot-label">穿搭顏色</div><div class="slot-content" id="slot-0">?</div></div>
+    <div class="slot-box"><div class="slot-label">飲水容量</div><div class="slot-content" id="slot-1">?</div></div>
+    <div class="slot-box"><div class="slot-label">熱身時間</div><div class="slot-content" id="slot-2">?</div></div>
+    <div class="slot-box"><div class="slot-label">隨機活動 1</div><div class="slot-content" id="slot-3">?</div></div>
+    <div class="slot-box"><div class="slot-label">隨機活動 2</div><div class="slot-content" id="slot-4">?</div></div>
+    <div class="slot-box"><div class="slot-label">隨機活動 3</div><div class="slot-content" id="slot-5">?</div></div>
+    <div class="slot-box"><div class="slot-label">菜式類別</div><div class="slot-content" id="slot-6">?</div></div>
+    <div class="slot-box"><div class="slot-label">拍照數量</div><div class="slot-content" id="slot-7">?</div></div>
+    <div class="slot-box"><div class="slot-label">聽歌數量</div><div class="slot-content" id="slot-8">?</div></div>
+</div>
+
+<button id="spin-btn" onclick="spin()">拉動手掣！</button>
+
+<script>
+    let currentMode = 'one';
+    const data = {
+        colors: ["紅", "橙", "黃", "綠", "青", "藍", "紫", "黑", "白", "灰", "粉紅"],
+        water: ["500ml up", "750ml up", "1000ml up"],
+        warmup: ["10-30mins", "15mins up", "20mins up", "25mins up", "30mins up"],
+        cuisine: ["中式", "日式", "韓式", "泰式", "越式", "馬來西亞", "印度", "法式", "意式", "西班牙", "希臘", "德式", "英式", "美式", "墨西哥", "巴西", "秘魯", "土耳其", "摩洛哥", "黎巴嫩", "澳式"],
+        photo: Array.from({length: 10}, (_, i) => `${i + 1} 張`),
+        music: ["1 up", "2 up", "3 up", "4 up", "5 up"],
+        one: ["睇Netflix/電影", "聽Podcast/有聲書", "睇書", "寫日記", "畫畫", "做手工", "玩遊戲", "線上課程", "煮餐飯", "烘焙", "執屋/斷捨離", "清手機相簿", "整理電腦檔案", "居家健身", "拉筋/瑜伽", "散步", "行山", "跑步", "踩單車", "去圖書館", "去書店", "咖啡店Hea", "逛超市", "逛商場", "去博物館", "去美術館", "去展覽", "睇日落", "去沙灘坐", "一人唱K", "一人打邊爐", "一人睇戲", "影相/街拍", "寫書法", "練習樂器", "冥想", "剪片", "寫文/寫故事", "計劃旅行", "睇地圖", "冷門知識", "試新食譜", "手沖咖啡", "浸浴", "敷面膜護膚", "試新髮型", "整理衣櫃", "捐舊衣物", "寫購物清單", "學外語", "YouTube教學", "數獨/填字", "砌LEGO", "砌拼圖", "寫信俾未來", "回顧舊相簿", "新飲品食譜", "整手工皂", "種盆栽", "咩都唔做"],
+        two: ["睇戲", "打機", "煮飯", "烘焙", "叫外賣", "去超市", "行山", "散步", "跑步", "踩單車", "去沙灘", "睇日落", "去咖啡店", "食飯", "打邊爐", "唱K", "睇展覽", "去博物館", "行書店", "行街", "執屋", "整手作", "畫畫", "拼圖", "砌LEGO", "玩卡牌", "Board Game", "傾計", "聽Podcast", "做運動", "拉筋", "去健身室", "游水", "影相", "剪片", "學新技能", "試新餐廳", "短途旅行", "睇日落", "去公園", "去動物園", "演唱會", "去市集", "做義工", "去釣魚", "露營", "燒烤", "整甜品", "執相", "整影片", "研究投資", "讀書", "寫嘢", "整計劃表", "去按摩", "去睇樓", "手工皂", "種嘢", "整蛋糕", "叫外賣睇戲"],
+        many: ["打邊爐", "燒烤", "叫到會", "煮大餐", "烘焙", "唱K", "睇戲", "Party Game", "狼人殺", "玩卡牌", "打麻雀", "團隊打機", "行山", "去沙灘", "露營", "去旅行", "燒烤場", "主題樂園", "去動物園", "去博物館", "行市集", "睇展覽", "演唱會", "睇球賽", "團體健身", "游水", "踩單車", "打籃球", "踢波", "羽毛球", "乒乓球", "行街", "去超市", "去咖啡店", "睇日落", "野餐", "躲貓貓", "密室逃脱", "Running Man", "做義工", "老人院探訪", "海邊吹風", "集體畫畫", "整手作", "交換禮物", "睇舊相", "網上吹水", "睇世界盃", "打保齡", "玩桌球", "去釣魚", "去農場", "踩船", "激光槍戰", "魔術表演", "唱K比賽", "團體影片", "跳舞團練", "模擬買樓", "咩都唔做"]
+    };
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-selector button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${mode}`).classList.add('active');
+    }
+
+    function getRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function spin() {
+        const btn = document.getElementById('spin-btn');
+        btn.disabled = true;
+        const boxes = document.querySelectorAll('.slot-content');
+        boxes.forEach(b => b.classList.add('rolling'));
+
+        let counts = 0;
+        const interval = setInterval(() => {
+            document.getElementById('slot-0').innerText = getRandom(data.colors);
+            document.getElementById('slot-1').innerText = getRandom(data.water);
+            document.getElementById('slot-2').innerText = getRandom(data.warmup);
+            let activities = [...data[currentMode]];
+            for(let i=3; i<=5; i++) {
+                let idx = Math.floor(Math.random() * activities.length);
+                document.getElementById(`slot-${i}`).innerText = activities.splice(idx, 1);
+            }
+            document.getElementById('slot-6').innerText = getRandom(data.cuisine);
+            document.getElementById('slot-7').innerText = getRandom(data.photo);
+            document.getElementById('slot-8').innerText = getRandom(data.music);
+            
+            counts++;
+            if (counts > 25) {
+                clearInterval(interval);
+                btn.disabled = false;
+                boxes.forEach(b => b.classList.remove('rolling'));
+            }
+        }, 60);
+    }
+
+    // 自動註冊 Service Worker 實現離線
+    if ('serviceWorker' in navigator) {
+        const swCode = `
+            const cacheName = 'slot-v2';
+            self.addEventListener('install', e => self.skipWaiting());
+            self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+        `;
+        const blob = new Blob([swCode], {type: 'text/javascript'});
+        navigator.serviceWorker.register(URL.createObjectURL(blob));
+    }
+</script>
+</body>
+</html>
